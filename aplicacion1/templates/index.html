@@ -1,0 +1,105 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Doroti - Gestión de Carpetas</title>
+  <meta name="description" content="Plataforma para gestión de carpetas">
+
+  <!-- Bootstrap y estilos -->
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons/font/bootstrap-icons.css">
+  <link rel="stylesheet" href="{% static 'css/style.css' %}"> <!-- CSS personalizado -->
+</head>
+<body>
+
+  <!-- Navbar -->
+  <nav class="navbar navbar-expand-lg navbar-light bg-light fixed-top shadow-sm">
+    <div class="container-fluid">
+      <a class="navbar-brand" href="{% url 'index' %}">
+        <img src="{% static 'img/Doroti Logo Horizontal.jpg' %}" alt="Logo Doroti" height="30">
+      </a>
+      <div class="d-flex align-items-center gap-3">
+        <!-- Buscador -->
+        <form method="POST" action="{% url 'buscador' %}" class="d-inline">
+          {% csrf_token %}
+          <button type="submit" class="btn btn-outline-primary btn-sm">
+            <i class="bi bi-search me-2"></i>Buscador
+          </button>
+        </form>
+        <!-- Cerrar sesión -->
+        <form method="POST" action="{% url 'logout' %}" class="d-inline">
+          {% csrf_token %}
+          <button type="submit" class="btn btn-danger btn-sm">
+            <i class="bi bi-box-arrow-right me-2"></i>Salir
+          </button>
+        </form>
+        <!-- Input de búsqueda -->
+        <div class="position-relative">
+          <input type="text" id="search" class="form-control form-control-sm" placeholder="Buscar carpetas..." onkeyup="searchItems()">
+          <i class="bi bi-search position-absolute top-50 end-0 translate-middle-y me-2 text-muted"></i>
+        </div>
+      </div>
+    </div>
+  </nav>
+
+  <!-- Contenido Principal -->
+  <main class="container mt-5 pt-4">
+    <div class="row g-4">
+      <!-- Botón para crear carpeta -->
+      <div class="col-md-3">
+        <form method="POST" action="{% url 'agregar_carpeta' %}" class="card text-center border-0 shadow-sm">
+          {% csrf_token %}
+          <div class="card-body p-3">
+            <img src="{% static 'img/Carpeta.png' %}" class="folder-icon" alt="Crear Carpeta" style="max-width: 80px;">
+            <h5 class="mt-2 fw-semibold">Agregar</h5>
+            <p class="text-muted small">Nueva Carpeta</p>
+          </div>
+          <button type="submit" class="btn btn-success w-100">Crear</button>
+        </form>
+      </div>
+
+      <!-- Listado de Carpetas -->
+      {% for carpeta in carpetas %}
+      <div class="col-md-3">
+        <!-- Al seleccionar una carpeta se envían los datos por POST a la vista 'indice' -->
+        <form method="POST" action="{% url 'indice' %}" class="card text-center border-0 shadow-sm">
+          {% csrf_token %}
+            <input type="hidden" name="caja" value="{{ carpeta.caja }}">
+            <input type="hidden" name="carpeta" value="{{ carpeta.carpeta }}">
+          <div class="card-body p-3">
+            <span class="badge bg-primary mb-2">Caja {{ carpeta.caja }}</span>
+            <img src="{% static 'img/Carpeta.png' %}" class="img-fluid" alt="Carpeta" style="max-width: 80px;">
+            <h5 class="mt-2 fw-semibold">Carpeta {{ carpeta.carpeta }}</h5>
+            <p class="text-muted small">C{{ carpeta.caja }} - {{ carpeta.carpeta }}</p>
+          </div>
+          <button type="submit" class="btn btn-outline-primary w-100">Abrir</button>
+        </form>
+      </div>
+      {% empty %}
+      <div class="col-12 text-center py-5">
+        <div class="alert alert-info">
+          <i class="bi bi-folder-x me-2"></i>No se encontraron carpetas disponibles.
+        </div>
+      </div>
+      {% endfor %}
+    </div>
+  </main>
+
+  <!-- Scripts -->
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+  <script>
+    // Función de búsqueda para filtrar carpetas
+    function searchItems() {
+      const searchTerm = document.getElementById('search').value.toLowerCase();
+      const cards = document.querySelectorAll('.card');
+      cards.forEach(card => {
+        const text = card.innerText.toLowerCase();
+        card.style.display = text.includes(searchTerm) ? 'block' : 'none';
+      });
+    }
+  </script>
+
+</body>
+</html>

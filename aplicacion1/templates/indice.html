@@ -1,0 +1,411 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Índice Documental</title>
+  <link rel="stylesheet" href="{% static 'css/estiloindice.css' %}">
+  <link rel="stylesheet" href="{% static 'css/botongrabar.css' %}">
+  <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
+  <link rel="stylesheet" href="https://code.jquery.com/ui/1.12.1/themes/base/jquery-ui.css">
+  <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+  <script src="https://code.jquery.com/ui/1.12.1/jquery-ui.min.js"></script>
+</head>
+<body>
+
+<div class="container mt-4">
+  <!-- Cabecera con datos de Caja y Carpeta -->
+  <div class="d-flex align-items-center gap-3" style="white-space: nowrap;">
+    <h5 class="mb-0">Caja {{ caja }} | Carpeta {{ carpeta }}</h5>
+    <form action="{% url 'tcarpeta' %}" method="POST" class="d-inline">
+      {% csrf_token %}
+      <input type="hidden" name="caja" value="{{ caja }}">
+      <input type="hidden" name="carpeta" value="{{ carpeta }}">
+      <input type="hidden" name="folios" value="{{ ultimaPagina }}">
+      <button type="submit" class="btn btn-primary btn-sm" style="padding: .25rem .5rem;">Terminar Carpeta</button>
+    </form>
+    <form action="{% url 'index' %}" method="POST" class="d-inline">
+      {% csrf_token %}
+      <button type="submit" class="btn btn-primary btn-sm" style="padding: .25rem .5rem;">Inicio</button>
+    </form>
+  </div>
+
+  <!-- Tabla de Capítulos -->
+  <table class="table table-bordered table-sm" id="capitulosTable">
+    <thead class="thead-light">
+      <tr>
+        <th></th>
+        <th>Descripción</th>
+        <th>Inicio</th>
+        <th>Final</th>
+        <th>Acciones</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% if capitulos|length == 0 %}
+      <tr>
+        <td colspan="5" class="text-center">No hay capítulos registrados. Página inicial: 1</td>
+      </tr>
+      {% else %}
+        {% for capitulo in capitulos %}
+          {% with numPaginas=capitulo.NoFolioFin|add:"-"|add:capitulo.NoFolioInicio|add:"1" %}
+          <tr data-id="{{ capitulo.id2 }}" data-num-paginas="{{ numPaginas }}">
+            <td class="drag-column"><span class="drag-icon">&#x21D5;</span></td>
+            <td contenteditable="true" class="editable">{{ capitulo.DescripcionUnidadDocumental }}</td>
+            <td>{{ capitulo.NoFolioInicio }}</td>
+            <td>{{ capitulo.NoFolioFin }}</td>
+            <td><button class="btn btn-success btn-sm eliminar">Eliminar</button></td>
+          </tr>
+          {% endwith %}
+        {% endfor %}
+      {% endif %}
+    </tbody>
+  </table>
+
+  <!-- Sección de Etiquetas -->
+  <div class="etiquetas mb-1" style="font-size: 0.75rem;">
+    <div class="etiquetas-container d-flex flex-wrap align-items-center" style="gap: 5px;">
+      {% for etiqueta in etiquetas %}
+      <div class="form-check form-check-inline" style="margin-bottom: 2px;">
+        <input class="form-check-input" type="radio" name="etiqueta" value="{{ etiqueta }}" id="etiqueta-{{ etiqueta }}" style="width: 0.85rem; height: 0.85rem;">
+        <label class="form-check-label" for="etiqueta-{{ etiqueta }}" style="font-size: 0.75rem; margin-left: 3px;">{{ etiqueta|capfirst }}</label>
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+
+  <!-- Formulario para Agregar Capítulo -->
+  <form id="capituloForm">
+    <h2 class="h6 mb-2">Asunto</h2>
+    <div class="form-group">
+      <textarea id="titulo" class="form-control form-control-sm" placeholder="Describir" required style="font-size: 1.2rem; height: 150px;"></textarea>
+    </div>
+    <div class="form-row align-items-center mb-2">
+      <button type="button" id="grabarBoton" class="btn btn-warning btn-sm">Grabar (F2)</button>
+      <p id="ultimaPagina" class="ml-1 mb-0">Última página: {{ ultimaPagina|add:"1" }}</p>
+      <div class="col-auto">
+        <input type="number" id="paginaFinal" class="form-control" placeholder="Página de Finalización" value="{{ ultimaPagina|add:"1" }}" required style="font-size: 1.2rem;">
+      </div>
+      <button type="submit" class="btn btn-primary btn-sm ml-2">Agregar Documento</button>
+    </div>
+  </form>
+  <br><br><br><br><br>
+</div>
+
+<script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.bundle.min.js"></script>
+<script>
+// Enfocar el textarea al cargar la página
+document.addEventListener('DOMContentLoaded', function() {
+  document.getElementById('titulo').focus();
+  document.getElementById('titulo').addEventListener('keydown', function(event) {
+    if (event.key === 'Enter') {
+      event.preventDefault();
+      if (this.value.trim()) {
+        document.getElementById('paginaFinal').focus();
+      }
+    }
+  });
+});
+
+$(document).ready(function() {
+    let siguientePagina = {% if capitulos|length == 0 %}1{% else %}{{ paginaSiguiente|default:"1" }}{% endif %};
+  inicializarPaginas();
+
+  // Agregar un nuevo capítulo
+  $("#capituloForm").submit(function(event) {
+    event.preventDefault();
+    const etiquetaSeleccionada = $("input[name='etiqueta']:checked").val();
+    if (!etiquetaSeleccionada) {
+      alert("Por favor, selecciona una etiqueta antes de agregar un capítulo.");
+      return;
+    }
+    const titulo = $("#titulo").val().trim();
+    const paginaFinal = parseInt($("#paginaFinal").val());
+    if (!titulo) {
+      alert("El título no puede estar vacío.");
+      return;
+    }
+    if (isNaN(paginaFinal) || paginaFinal < siguientePagina) {
+      alert("La página de finalización debe ser un número válido mayor o igual a la página de inicio.");
+      return;
+    }
+    const paginaInicio = siguientePagina;
+    const numPaginas = paginaFinal - paginaInicio + 1;
+    if (numPaginas > 200) {
+      alert("No se puede agregar un número de folio que exceda los 200 folios.");
+      return;
+    }
+    $.ajax({
+      url: '{% url "agregar_capitulo" %}',
+      type: 'POST',
+      data: {
+        caja: {{ caja }},
+        carpeta: {{ carpeta }},
+        titulo: `${etiquetaSeleccionada}: ${titulo}`,
+        paginaFinal: paginaFinal,
+        csrfmiddlewaretoken: '{{ csrf_token }}'
+      },
+      dataType: 'json',
+      success: function(response) {
+        if (response.status === 'success') {
+          const nuevoCapitulo = response.capitulo;
+          $("#capitulosTable tbody").find("tr:contains('No hay capítulos registrados')").remove();
+          $("#capitulosTable tbody").append(`
+            <tr data-id="${nuevoCapitulo.id}" data-num-paginas="${nuevoCapitulo.num_paginas}">
+              <td class="drag-column"><span class="drag-icon">&#x21D5;</span></td>
+              <td contenteditable="true" class="editable">${nuevoCapitulo.titulo}</td>
+              <td>${nuevoCapitulo.pagina_inicio}</td>
+              <td>${nuevoCapitulo.pagina_final}</td>
+              <td><button class="btn btn-success btn-sm eliminar">Eliminar</button></td>
+            </tr>
+          `);
+          siguientePagina = parseInt(nuevoCapitulo.pagina_final, 10) + 1;
+          $("#ultimaPagina").text(`Última página: ${siguientePagina}`);
+          $("#paginaFinal").val(siguientePagina);
+          $("#titulo").val('');
+          $("#titulo").focus();
+          $('html, body').animate({scrollTop: $(document).height()}, 500);
+        } else {
+          alert(response.message || "Error al agregar el capítulo.");
+        }
+      },
+      error: function(xhr, status, error) {
+        alert(`Error: ${xhr.status} - ${xhr.statusText}\nDetalles: ${xhr.responseText}`);
+      }
+    });
+  });
+
+  $("#titulo").keypress(function(event) {
+    if (event.which === 13) {
+      event.preventDefault();
+      $("#capituloForm").submit();
+      $("#titulo").val('');
+    }
+  });
+
+  // Hacer la tabla sortable y actualizar el orden
+  $("#capitulosTable tbody").sortable({
+    items: "tr",
+    cursor: "move",
+    placeholder: "highlight",
+    handle: ".drag-icon",
+    update: function() {
+      actualizarPaginas();
+      const nuevoOrden = $("#capitulosTable tbody tr").map(function(index) {
+        const $fila = $(this);
+        const nuevoId = index + 1;
+        $fila.data("id", nuevoId);
+        $fila.find("td:first").html('<span class="drag-icon">&#x21D5;</span>');
+        const titulo = $fila.find("td:eq(1)").text();
+        const inicio = parseInt($fila.find("td:eq(2)").text(), 10);
+        const fin = parseInt($fila.find("td:eq(3)").text(), 10);
+        const paginas = fin - inicio + 1;
+        return { id: nuevoId, titulo: titulo, inicio: inicio, fin: fin, paginas: paginas };
+      }).get();
+      const jsonData = JSON.stringify({
+        cambios: nuevoOrden,
+        caja: {{ caja }},
+        carpeta: {{ carpeta }}
+      });
+      $.ajax({
+        url: '{% url "actualizar_orden" %}',
+        method: 'POST',
+        data: { data: jsonData, csrfmiddlewaretoken: '{{ csrf_token }}' },
+        success: function(response) {
+          console.log("Actualización exitosa:", response);
+        },
+        error: function(xhr, status, error) {
+          alert("Error al actualizar: " + error);
+        }
+      });
+    }
+  });
+
+  // Eliminar un capítulo
+  $(document).on("click", ".eliminar", function() {
+    const $fila = $(this).closest("tr");
+    const idCapitulo = $fila.data("id");
+    if (confirm("¿Está seguro de que desea eliminar este capítulo?")) {
+      $.ajax({
+        url: '{% url "eliminar_capitulo" %}',
+        type: 'POST',
+        data: {
+          id: idCapitulo,
+          caja: {{ caja }},
+          carpeta: {{ carpeta }},
+          csrfmiddlewaretoken: '{{ csrf_token }}'
+        },
+        success: function(response) {
+          try {
+            if (response.status === 'success') {
+              $fila.remove();
+              actualizarPaginas();
+              actualizarColumnasMover();
+            } else {
+              alert(response.message || "Error al eliminar el capítulo.");
+            }
+          } catch (e) {
+            alert("Error al procesar la solicitud.");
+          }
+        },
+        error: function() {
+          alert("Error al eliminar el capítulo. Por favor, intenta nuevamente.");
+        }
+      });
+    }
+  });
+
+  function actualizarColumnasMover() {
+    $("#capitulosTable tbody tr").each(function() {
+      const $columnaMover = $(this).find(".drag-column");
+      if (!$columnaMover.length) {
+        $(this).prepend('<td class="drag-column"><span class="drag-icon">&#x21D5;</span></td>');
+      } else {
+        $columnaMover.html('<span class="drag-icon">&#x21D5;</span>');
+      }
+    });
+  }
+
+  $(document).on("blur", ".editable", function() {
+    const nuevoTitulo = $(this).text().trim();
+    if (!nuevoTitulo) {
+      alert("El título no puede estar vacío.");
+      $(this).text("Título");
+    }
+  });
+});
+
+function actualizarUltimaPagina(ultimaPagina) {
+  siguientePagina = ultimaPagina + 1;
+  $("#ultimaPagina").text(`Última página: ${siguientePagina}`);
+  $("#paginaFinal").val(`${siguientePagina}`);
+}
+
+function inicializarPaginas() {
+  $.ajax({
+    url: '{% url "obtener_capitulos" %}',
+    type: 'GET',
+    data: { caja: {{ caja }}, carpeta: {{ carpeta }} },
+    dataType: 'json',
+    success: function(response) {
+      if (Array.isArray(response)) {
+        let siguientePagina = 0;
+        response.forEach((capitulo, index) => {
+          const { id, titulo, paginas, paginaInicio, paginaFinal } = capitulo;
+          if (isNaN(paginaInicio) || isNaN(paginaFinal) || paginaFinal < paginaInicio) return;
+          const $fila = $(`#capitulosTable tbody tr[data-id="${id}"]`);
+          if ($fila.length) {
+            $fila.find("td:eq(2)").text(paginaInicio);
+            $fila.find("td:eq(3)").text(paginaFinal);
+            $fila.data("num-paginas", paginas);
+          } else {
+            $("#capitulosTable tbody").append(`
+              <tr data-id="${id}" data-num-paginas="${paginas}">
+                <td class="drag-column"><span class="drag-icon">&#x21D5;</span></td>
+                <td contenteditable="true" class="editable">${titulo}</td>
+                <td>${paginaInicio}</td>
+                <td>${paginaFinal}</td>
+                <td><button class="eliminar">Eliminar</button></td>
+              </tr>
+            `);
+          }
+          if (paginaFinal > siguientePagina) siguientePagina = paginaFinal;
+        });
+        actualizarUltimaPagina(siguientePagina);
+      } else {
+        console.error("Error: Formato de datos no válido.");
+      }
+    },
+    error: function(xhr, status, error) {
+      console.error("Error al obtener los datos de los capítulos:", error);
+      console.log("Respuesta del servidor:", xhr.responseText);
+    }
+  });
+}
+
+// Reconocimiento de voz
+let grabando = false;
+let recognition;
+function iniciarReconocimiento() {
+  if (!('webkitSpeechRecognition' in window)) {
+    alert("Lo siento, tu navegador no soporta esta función.");
+    return;
+  }
+  recognition = new webkitSpeechRecognition();
+  recognition.lang = 'es-CO';
+  recognition.continuous = true;
+  recognition.interimResults = false;
+  recognition.onresult = function(event) {
+    let textarea = document.getElementById('titulo');
+    let nuevoTexto = "";
+    for (let i = event.resultIndex; i < event.results.length; i++) {
+      const resultado = event.results[i];
+      if (resultado.isFinal) {
+        let textoReconocido = resultado[0].transcript;
+        // Reemplazos de palabras
+        textoReconocido = textoReconocido.replace(/\bgoyes\b/gi, "Goyes")
+                                         .replace(/\blibardo\b/gi, "Libardo")
+                                         .replace(/\briascos\b/gi, "Riascos")
+                                         .replace(/\blagos\b/gi, "Lagos")
+                                         .replace(/\bramos\b/gi, "Ramos")
+                                         .replace(/\bcoral\b/gi, "Coral")
+                                         .replace(/\bbastidas\b/gi, "Bastidas")
+                                         .replace(/\bburbano\b/gi, "Burbano")
+                                         .replace(/\btajumbina\b/gi, "Tajumbina")
+                                         .replace(/\bocaña\b/gi, "Ocaña")
+                                         .replace(/\bderecho\b/gi, "Derecho")
+                                         .replace(/\bcalvachí\b/gi, "Calvachy")
+                                         .replace(/\bhoyos\b/gi, "Hoyos")
+                                         .replace(/\bsotelo\b/gi, "Sotelo")
+                                         .replace(/\bcalpa\b/gi, "Calpa")
+                                         .replace(/\bpasos\b/gi, "Pasos")
+                                         .replace(/\bdolores\b/gi, "Dolores")
+                                         .replace(/\brisueño\b/gi, "Risueño")
+                                         .replace(/\bsolarte\b/gi, "Solarte")
+                                         .replace(/\bcortés\b/gi, "Cortés")
+                                         .replace(/\bespecialización\b/gi, "Especialización")
+                                         .replace(/\bvela\b/gi, "Vela")
+                                         .replace(/\bmadroñero\b/gi, "Madroñero")
+                                         .replace(/\bparedes\b/gi, "Paredes")
+                                         .replace(/\bvillota\b/gi, "Villota")
+                                         .replace(/\bmunera\b/gi, "Munera")
+                                         .replace(/\buniversidad\b/gi, "Universidad")
+                                         .replace(/\bnariño\b/gi, "Nariño")
+                                         .replace(/\brevelo\b/gi, "Revelo");
+        nuevoTexto += (nuevoTexto ? " " : "") + textoReconocido;
+      }
+    }
+    textarea.value += nuevoTexto.trim() + " ";
+    textarea.focus();
+    textarea.setSelectionRange(textarea.value.length, textarea.value.length);
+  };
+  recognition.onend = function() {
+    if (grabando) recognition.start();
+  };
+  recognition.start();
+  grabando = true;
+  document.getElementById('grabarBoton').classList.add('grabando');
+}
+function detenerReconocimiento() {
+  if (recognition) recognition.stop();
+  grabando = false;
+  document.getElementById('grabarBoton').classList.remove('grabando');
+  const textarea = document.getElementById('titulo');
+  textarea.focus();
+  textarea.setSelectionRange(textarea.value.length, textarea.value.length);
+}
+document.getElementById('grabarBoton').addEventListener('click', function() {
+  if (!grabando) iniciarReconocimiento();
+  else detenerReconocimiento();
+});
+document.addEventListener('keydown', function(event) {
+  if (event.key === 'F2' && !grabando) iniciarReconocimiento();
+});
+document.addEventListener('keyup', function(event) {
+  if (event.key === 'F2' && grabando) detenerReconocimiento();
+});
+</script>
+
+</body>
+</html>
