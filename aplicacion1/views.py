@@ -12,6 +12,78 @@ import urllib.parse
 from .forms import CarpetaForm
 from .models import Carpeta, IndiceTemp, Serie
 
+from django.shortcuts import render, redirect
+from django.views import View
+from django import forms
+from django.db import connection
+import json
+from django.http import JsonResponse
+
+from .models import Subserie, Serie
+
+from django.http import JsonResponse
+from django.views.decorators.csrf import csrf_exempt
+from django.shortcuts import get_list_or_404
+from .models import Subs
+
+@csrf_exempt
+def obtener_subseries(request):
+    if request.method == "POST":
+        serie_nombre = request.POST.get('serie_id')
+        
+        # Filtrar por serie_nombre (las que tengan el mismo valor en la BD)
+        subseries = Subs.objects.filter(serie_nombre=serie_nombre).values('id', 'nombre')
+
+        return JsonResponse(list(subseries), safe=False)
+
+    return JsonResponse({'error': 'Método no permitido'}, status=405)
+
+
+
+class CarpetaForm(forms.Form):
+    caja = forms.IntegerField(widget=forms.HiddenInput())
+    carpeta = forms.IntegerField(widget=forms.HiddenInput())
+    serie = forms.ChoiceField(choices=[], required=True, widget=forms.Select(attrs={'class': 'form-control form-control-sm'}))
+    subserie = forms.ChoiceField(choices=[], required=False, widget=forms.Select(attrs={'class': 'form-control form-control-sm'}))
+    tituloCarpeta = forms.CharField(widget=forms.Textarea(attrs={'class': 'form-control', 'rows': 3, 'maxlength': 56}), required=True)
+    fechaInicial = forms.DateField(widget=forms.DateInput(attrs={'type': 'date', 'class': 'form-control'}), required=True)
+    fechaFinal = forms.DateField(widget=forms.DateInput(attrs={'type': 'date', 'class': 'form-control'}), required=True)
+    folios = forms.IntegerField(widget=forms.HiddenInput(), required=False)
+
+class CarpetaView(View):
+    template_name = 'tcarpeta.html'
+
+    def get_series(self):
+        with connection.cursor() as cursor:
+            cursor.execute("SELECT id, nombre FROM Serie ORDER BY nombre ASC")
+            series = cursor.fetchall()
+        return [(s[1], s[1]) for s in series]
+
+    def get(self, request):
+        caja = request.GET.get('caja')
+        carpeta = request.GET.get('carpeta')
+
+        with connection.cursor() as cursor:
+            cursor.execute("SELECT MAX(NoFolioFin) FROM IndiceTemp WHERE caja = %s AND carpeta = %s", [caja, carpeta])
+            ultima_pagina = cursor.fetchone()[0] or 0
+
+        form = CarpetaForm(initial={'caja': caja, 'carpeta': carpeta, 'folios': ultima_pagina})
+        form.fields['serie'].choices = self.get_series()
+        
+        return render(request, self.template_name, {'form': form, 'caja': caja, 'carpeta': carpeta, 'ultima_pagina': ultima_pagina})
+
+    def post(self, request):
+        form = CarpetaForm(request.POST)
+        if form.is_valid():
+            return redirect('indice')  # Redirige a la vista del índice
+        return render(request, self.template_name, {'form': form})
+
+def get_subseries(request):
+    serie_nombre = request.POST.get('serie_id')
+    with connection.cursor() as cursor:
+        cursor.execute("SELECT nombre FROM Subserie WHERE serie_id = (SELECT id FROM Serie WHERE nombre = %s)", [serie_nombre])
+        subseries = [row[0] for row in cursor.fetchall()]
+    return JsonResponse({'subseries': subseries})
 
 @require_GET
 def obtener_capitulos_view(request):

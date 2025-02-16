@@ -1,0 +1,89 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Carpeta</title>
+    <link rel="stylesheet" href="{% static 'css/estiloindice.css' %}">
+    <link rel="stylesheet" href="{% static 'css/botongrabar.css' %}">
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
+</head>
+<body>
+<div class="container mt-4">
+    <h5>Caja {{ caja }} | Carpeta {{ carpeta }}</h5>
+    <form action="{% url 'tcarpeta' %}" method="post">
+        {% csrf_token %}
+        <input type="hidden" name="caja" value="{{ caja }}">
+        <input type="hidden" name="carpeta" value="{{ carpeta }}">
+
+        <div class="form-group">
+            <label for="serie">Serie:</label>
+            <select id="serie" name="serie" class="form-control" required>
+                <option value="" disabled selected>Seleccione una Serie</option>
+                {% for serie in series %}
+                    <option value="{{ serie.nombre }}">{{ serie.nombre }}</option>
+                {% endfor %}
+            </select>
+        </div>
+
+        <div class="form-group">
+            <label for="subserie">Subserie:</label>
+            <select id="subserie" name="subserie" class="form-control">
+                <option value="" selected>Seleccione una Subserie</option>
+            </select>
+        </div>
+
+        <div class="form-group">
+            <label for="tituloCarpeta">Título de Carpeta:</label>
+            <textarea id="tituloCarpeta" name="tituloCarpeta" class="form-control" rows="3" maxlength="56"></textarea>
+        </div>
+
+        <div class="form-row">
+            <div class="form-group col-md-3">
+                <label for="fechaInicial">Fecha Inicial:</label>
+                <input type="date" id="fechaInicial" name="fechaInicial" class="form-control" required>
+            </div>
+            <div class="form-group col-md-3">
+                <label for="fechaFinal">Fecha Final:</label>
+                <input type="date" id="fechaFinal" name="fechaFinal" class="form-control" required>
+            </div>
+        </div>
+
+        <input type="hidden" name="folios" value="{{ ultima_pagina }}">
+
+        <button type="submit" class="btn btn-success">Finalizar Carpeta</button>
+    </form>
+</div>
+
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+<script>
+$(document).ready(function () {
+    $('#serie').change(function () {
+        var serieNombre = $(this).find("option:selected").text();
+        $('#subserie').empty().append('<option value="" selected>Seleccione una Subserie</option>');
+
+        if (serieNombre) {
+            $.ajax({
+                url: "{% url 'obtener_subseries' %}",  // Verifica que esta URL esté registrada
+                type: 'POST',
+                data: { 
+                    serie_id: serieNombre, 
+                    csrfmiddlewaretoken: '{{ csrf_token }}' 
+                },
+                success: function (response) {
+                    response.forEach(function (subserie) {
+                        $('#subserie').append('<option value="' + subserie.id + '">' + subserie.nombre + '</option>');
+                    });
+                },
+                error: function () {
+                    alert('Error al cargar las subseries.');
+                }
+            });
+        }
+    });
+});
+</script>
+
+</body>
+</html>

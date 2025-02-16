@@ -2,6 +2,16 @@ from django.db import models
 from django.contrib.auth.models import User
 from datetime import date
 
+from django.db import models
+
+class Subs(models.Model):
+    id = models.AutoField(primary_key=True)
+    serie_nombre = models.CharField(max_length=255, null=True, blank=True)  # Puede ser NULL
+    nombre = models.CharField(max_length=255)  # Nombre de la subserie
+
+    def __str__(self):
+        return self.nombre
+
 
 class Carpeta(models.Model):
     caja = models.PositiveIntegerField(verbose_name="Caja")
