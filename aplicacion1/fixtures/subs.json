@@ -1,0 +1,274 @@
+[
+    {
+        "model": "aplicacion1.subs",
+        "pk": 1,
+        "fields": {
+            "serie_nombre": "",
+            "Subs": "COMITÉ CURRICULAR"
+        }
+    },
+    {
+        "model": "aplicacion1.subs",
+        "pk": 2,
+        "fields": {
+            "serie_nombre": "",
+            "Subs": "ALMACÉN Y SUMINISTROS"
+        }
+    },
+    {
+        "model": "aplicacion1.subs",
+        "pk": 3,
+        "fields": {
+            "serie_nombre": "",
+            "Subs": "CERTIFICADOS DE DISPONIBILIDAD PRESUPUESTAL"
+        }
+    },
+    {
+        "model": "aplicacion1.subs",
+        "pk": 4,
+        "fields": {
+            "serie_nombre": "",
+            "Subs": "CONSEJO DE POSTGRADOS"
+        }
+    },
+    {
+        "model": "aplicacion1.subs",
+        "pk": 5,
+        "fields": {
+            "serie_nombre": "",
+            "Subs": "CERTIFICADOS DE INGRESOS"
+        }
+    },
+    {
+        "model": "aplicacion1.subs",
+        "pk": 6,
+        "fields": {
+            "serie_nombre": "",
+            "Subs": "CERTIFICACIONES"
+        }
+    },
+    {
+        "model": "aplicacion1.subs",
+        "pk": 7,
+        "fields": {
+            "serie_nombre": "",
+            "Subs": "CONGRESOS"
+        }
+    },
+    {
+        "model": "aplicacion1.subs",
+        "pk": 8,
+        "fields": {
+            "serie_nombre": "",
+            "Subs": "ORDENES PRESTACIÓN DE SERVICIOS OPS"
+        }
+    },
+    {
+        "model": "aplicacion1.subs",
+        "pk": 9,
+        "fields": {
+            "serie_nombre": "",
+            "Subs": "AGENCIA DE DESARROLLO LOCAL \"ADEL\""
+        }
+    },
+    {
+        "model": "aplicacion1.subs",
+        "pk": 10,
+        "fields": {
+            "serie_nombre": "",
+            "Subs": "CONTRALORIA"
+        }
+    },
+    {
+        "model": "aplicacion1.subs",
+        "pk": 11,
+        "fields": {
+            "serie_nombre": "",
+            "Subs": "USACA"
+        }
+    },
+    {
+        "model": "aplicacion1.subs",
+        "pk": 12,
+        "fields": {
+            "serie_nombre": "",
+            "Subs": "COOPERACIÓN ACADÉMICA UDENAR Y UNAL"
+        }
+    },
+    {
+        "model": "aplicacion1.subs",
+        "pk": 13,
+        "fields": {
+            "serie_nombre": "Diplomados",
+            "Subs": "CONTRATACIÓN ESTATAL"
+        }
+    },
+    {
+        "model": "aplicacion1.subs",
+        "pk": 14,
+        "fields": {
+            "serie_nombre": "Diplomados",
+            "Subs": "CONCILIACIÓN Y TRATAMIENTO DE CONFLICTOS O RESPONSABILIDAD MEDICA"
+        }
+    },
+    {
+        "model": "aplicacion1.subs",
+        "pk": 15,
+        "fields": {
+            "serie_nombre": "Diplomados",
+            "Subs": "CODIGO GENERAL DEL PROCESO"
+        }
+    },
+    {
+        "model": "aplicacion1.subs",
+        "pk": 16,
+        "fields": {
+            "serie_nombre": "Diplomados",
+            "Subs": "DERECHO EDUCATIVO"
+        }
+    },
+    {
+        "model": "aplicacion1.subs",
+        "pk": 17,
+        "fields": {
+            "serie_nombre": "Diplomados",
+            "Subs": "DERECHO FISCAL"
+        }
+    },
+    {
+        "model": "aplicacion1.subs",
+        "pk": 18,
+        "fields": {
+            "serie_nombre": "Diplomados",
+            "Subs": "DERECHOS HUMANOS"
+        }
+    },
+    {
+        "model": "aplicacion1.subs",
+        "pk": 19,
+        "fields": {
+            "serie_nombre": "Diplomados",
+            "Subs": "DESPLAZAMIENTO FORZADO CON PERSPECTIVA DE DERECHOS"
+        }
+    },
+    {
+        "model": "aplicacion1.subs",
+        "pk": 20,
+        "fields": {
+            "serie_nombre": "Diplomados",
+            "Subs": "ACTUALIZACIÓN REFORMAS JURÍDICO PENALES"
+        }
+    },
+    {
+        "model": "aplicacion1.subs",
+        "pk": 21,
+        "fields": {
+            "serie_nombre": "Diplomados",
+            "Subs": "FORTALECIMIENTO HABILIDADES DESARROLLO PAZ TERRITORIAL."
+        }
+    },
+    {
+        "model": "aplicacion1.subs",
+        "pk": 22,
+        "fields": {
+            "serie_nombre": "Diplomados",
+            "Subs": "PROYECCIÓN SOCIAL JUSTICIA TERRITORIAL Y EL POSCONFLICTO"
+        }
+    },
+    {
+        "model": "aplicacion1.subs",
+        "pk": 23,
+        "fields": {
+            "serie_nombre": "Diplomados",
+            "Subs": "JUSTICIA TRANSICIONAL"
+        }
+    },
+    {
+        "model": "aplicacion1.subs",
+        "pk": 24,
+        "fields": {
+            "serie_nombre": "Diplomados",
+            "Subs": "NUEVO RÉGIMEN PENAL"
+        }
+    },
+    {
+        "model": "aplicacion1.subs",
+        "pk": 25,
+        "fields": {
+            "serie_nombre": "Diplomados",
+            "Subs": "PROYECCIÓN SOCIAL CÁLCULOS FINANCIEROS"
+        }
+    },
+    {
+        "model": "aplicacion1.subs",
+        "pk": 26,
+        "fields": {
+            "serie_nombre": "Especialización",
+            "Subs": "DERECHO PENAL"
+        }
+    },
+    {
+        "model": "aplicacion1.subs",
+        "pk": 27,
+        "fields": {
+            "serie_nombre": "Diplomados",
+            "Subs": "PROYECCIÓN SOCIAL EQUIDAD GENERO"
+        }
+    },
+    {
+        "model": "aplicacion1.subs",
+        "pk": 28,
+        "fields": {
+            "serie_nombre": "Diplomados",
+            "Subs": "PROYECCIÓN SOCIAL DERECHO DISCIPLINARIO"
+        }
+    },
+    {
+        "model": "aplicacion1.subs",
+        "pk": 29,
+        "fields": {
+            "serie_nombre": "Diplomados",
+            "Subs": "SEGURIDAD SOCIAL"
+        }
+    },
+    {
+        "model": "aplicacion1.subs",
+        "pk": 30,
+        "fields": {
+            "serie_nombre": "Diplomados",
+            "Subs": "RESPONSABILIDAD MÉDICA"
+        }
+    },
+    {
+        "model": "aplicacion1.subs",
+        "pk": 31,
+        "fields": {
+            "serie_nombre": "Convenios",
+            "Subs": "ESPECIALIZACIÓN DERECHO CONSTITUCIONAL"
+        }
+    },
+    {
+        "model": "aplicacion1.subs",
+        "pk": 32,
+        "fields": {
+            "serie_nombre": "Especialización",
+            "Subs": "CONTRATACIÓN ESTATAL"
+        }
+    },
+    {
+        "model": "aplicacion1.subs",
+        "pk": 33,
+        "fields": {
+            "serie_nombre": "Ordenes",
+            "Subs": "ORDENES DE PAGO"
+        }
+    },
+    {
+        "model": "aplicacion1.subs",
+        "pk": 34,
+        "fields": {
+            "serie_nombre": "Especialización",
+            "Subs": "DERECHO ADMINISTRATIVO"
+        }
+    }
+]

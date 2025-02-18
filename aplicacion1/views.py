@@ -1,42 +1,147 @@
-from django.shortcuts import render, redirect
+from django.shortcuts import render, redirect, get_list_or_404
 from django.contrib import messages
 from django.http import JsonResponse
+from django.views import View
 from django.views.decorators.http import require_POST, require_GET
 from django.views.decorators.csrf import csrf_exempt
-from django.db import transaction
+from django.db import transaction, connection
 from django.db.models import Max
 
 import json
 import urllib.parse
 
+from django import forms
 from .forms import CarpetaForm
 from .models import Carpeta, IndiceTemp, Serie
 
-from django.shortcuts import render, redirect
-from django.views import View
-from django import forms
+from .forms import CarpetaForm
+from .models import Carpeta, IndiceTemp, Serie, Subs
+
 from django.db import connection
 import json
 from django.http import JsonResponse
 
-from .models import Subserie, Serie
+from .models import Serie
+from django.http import JsonResponse
+from .models import Subs  # Asegúrate de que el modelo esté bien importado
 
+from django.shortcuts import get_object_or_404
 from django.http import JsonResponse
 from django.views.decorators.csrf import csrf_exempt
 from django.shortcuts import get_list_or_404
 from .models import Subs
 
-@csrf_exempt
-def obtener_subseries(request):
-    if request.method == "POST":
-        serie_nombre = request.POST.get('serie_id')
+from django.shortcuts import render
+
+@require_POST
+def obtener_Subs_view(request):
+    # Recibir el ID de la serie desde POST
+    serie_id = request.POST.get("serie_id")
+    
+    if not serie_id:
+        return JsonResponse({"error": "No se proporcionó una serie"}, status=400)
+    
+    try:
+        # Obtener el objeto Serie usando el ID
+        serie = get_object_or_404(Serie, pk=serie_id)
         
-        # Filtrar por serie_nombre (las que tengan el mismo valor en la BD)
-        subseries = Subs.objects.filter(serie_nombre=serie_nombre).values('id', 'nombre')
+        # Filtrar las subseries usando el nombre de la serie (campo 'serie_nombre')
+        subseries = Subs.objects.filter(serie_nombre=serie.nombre).values("id", "Subs")
+        
+        # Retornar los datos en un JSON bajo la clave "subseries"
+        return JsonResponse({"subseries": list(subseries)})
+    except Exception as e:
+        return JsonResponse({"error": str(e)}, status=500)
 
-        return JsonResponse(list(subseries), safe=False)
 
-    return JsonResponse({'error': 'Método no permitido'}, status=405)
+
+def indice_view(request):
+    # Si se envían nuevos datos por POST, se actualizan en la sesión.
+    if request.method == "POST":
+        caja = request.POST.get('caja')
+        carpeta = request.POST.get('carpeta')
+        if caja and carpeta:
+            request.session['caja'] = caja
+            request.session['carpeta'] = carpeta
+        else:
+            # Si no vienen datos, se intenta obtener de la sesión.
+            caja = request.session.get('caja')
+            carpeta = request.session.get('carpeta')
+    else:
+        # En GET se obtienen de la sesión.
+        caja = request.session.get('caja')
+        carpeta = request.session.get('carpeta')
+
+    # Si no hay caja o carpeta definidos, redirige o muestra un error.
+    if not caja or not carpeta:
+        # Puedes redirigir a una página de selección o al login
+        return redirect('login')
+
+    # Convertir a enteros (si es necesario)
+    try:
+        caja = int(caja)
+        carpeta = int(carpeta)
+    except ValueError:
+        return redirect('login')
+
+    print(f"DEBUG Indice - Caja en sesión: {request.session.get('caja')}")
+    print(f"DEBUG Indice - Carpeta en sesión: {request.session.get('carpeta')}")
+
+    # Consulta: obtener solo los capítulos correspondientes a la caja y carpeta actual.
+    capitulos = IndiceTemp.objects.filter(Caja=caja, Carpeta=carpeta).order_by('id2')
+
+    # Calcular la última página a partir del valor máximo de NoFolioFin
+    ultimaPagina = 0
+    for cap in capitulos:
+        if cap.NoFolioFin and cap.NoFolioFin > ultimaPagina:
+            ultimaPagina = cap.NoFolioFin
+
+    # Obtener las etiquetas (Series) si se utilizan
+    etiquetas = Serie.objects.all().order_by('nombre')
+
+    context = {
+        'caja': caja,
+        'carpeta': carpeta,
+        'capitulos': capitulos,
+        'ultimaPagina': ultimaPagina,
+        'etiquetas': etiquetas,
+    }
+    return render(request, 'indice.html', context)
+
+
+from aplicacion1.models import Serie  # Asegúrate de importar el modelo
+
+def tcarpeta_view(request):
+    # Intentar obtener los valores desde el formulario
+    caja = request.POST.get("caja")
+    carpeta = request.POST.get("carpeta")
+
+    # Si no vienen en POST, intentar recuperarlos desde la sesión
+    if not caja:
+        caja = request.session.get("caja")
+    if not carpeta:
+        carpeta = request.session.get("carpeta")
+
+    # Verificar si los datos existen, sino redirigir a índice
+    if not caja or not carpeta:
+        print("DEBUG tcarpeta: No se encontraron datos de caja y carpeta en POST ni en la sesión")
+        return redirect("indice")  # Asegúrate de que esta URL esté bien definida
+
+    print(f"DEBUG tcarpeta - Caja: {caja}")
+    print(f"DEBUG tcarpeta - Carpeta: {carpeta}")
+
+    # Obtener las etiquetas (series) desde la base de datos
+    etiquetas = Serie.objects.all().order_by("nombre")
+
+    context = {
+        "caja": caja,
+        "carpeta": carpeta,
+        "etiquetas": etiquetas,  # Pasar etiquetas al template
+    }
+    return render(request, "tcarpeta.html", context)
+
+
+
 
 
 
@@ -44,7 +149,7 @@ class CarpetaForm(forms.Form):
     caja = forms.IntegerField(widget=forms.HiddenInput())
     carpeta = forms.IntegerField(widget=forms.HiddenInput())
     serie = forms.ChoiceField(choices=[], required=True, widget=forms.Select(attrs={'class': 'form-control form-control-sm'}))
-    subserie = forms.ChoiceField(choices=[], required=False, widget=forms.Select(attrs={'class': 'form-control form-control-sm'}))
+    Subs = forms.ChoiceField(choices=[], required=False, widget=forms.Select(attrs={'class': 'form-control form-control-sm'}))
     tituloCarpeta = forms.CharField(widget=forms.Textarea(attrs={'class': 'form-control', 'rows': 3, 'maxlength': 56}), required=True)
     fechaInicial = forms.DateField(widget=forms.DateInput(attrs={'type': 'date', 'class': 'form-control'}), required=True)
     fechaFinal = forms.DateField(widget=forms.DateInput(attrs={'type': 'date', 'class': 'form-control'}), required=True)
@@ -69,21 +174,19 @@ class CarpetaView(View):
 
         form = CarpetaForm(initial={'caja': caja, 'carpeta': carpeta, 'folios': ultima_pagina})
         form.fields['serie'].choices = self.get_series()
-        
-        return render(request, self.template_name, {'form': form, 'caja': caja, 'carpeta': carpeta, 'ultima_pagina': ultima_pagina})
 
-    def post(self, request):
-        form = CarpetaForm(request.POST)
-        if form.is_valid():
-            return redirect('indice')  # Redirige a la vista del índice
-        return render(request, self.template_name, {'form': form})
+        # Obtener las subseries desde la base de datos
+        subseries = Subs.objects.all().order_by('Subs')
 
-def get_subseries(request):
-    serie_nombre = request.POST.get('serie_id')
-    with connection.cursor() as cursor:
-        cursor.execute("SELECT nombre FROM Subserie WHERE serie_id = (SELECT id FROM Serie WHERE nombre = %s)", [serie_nombre])
-        subseries = [row[0] for row in cursor.fetchall()]
-    return JsonResponse({'subseries': subseries})
+        return render(request, self.template_name, {
+            'form': form,
+            'caja': caja,
+            'carpeta': carpeta,
+            'ultima_pagina': ultima_pagina,
+            'subseries': subseries  # Pasamos las subseries al contexto
+        })
+
+
 
 @require_GET
 def obtener_capitulos_view(request):
@@ -233,66 +336,6 @@ def index_view(request):
 
 def buscador_view(request):
     return render(request, "buscador.html")
-
-def tcarpeta_view(request):
-    return render(request, "tcarpeta.html")
-
-
-
-
-def indice_view(request):
-    # Si se envían nuevos datos por POST, se actualizan en la sesión.
-    if request.method == "POST":
-        caja = request.POST.get('caja')
-        carpeta = request.POST.get('carpeta')
-        if caja and carpeta:
-            request.session['caja'] = caja
-            request.session['carpeta'] = carpeta
-        else:
-            # Si no vienen datos, se intenta obtener de la sesión.
-            caja = request.session.get('caja')
-            carpeta = request.session.get('carpeta')
-    else:
-        # En GET se obtienen de la sesión.
-        caja = request.session.get('caja')
-        carpeta = request.session.get('carpeta')
-
-    # Si no hay caja o carpeta definidos, redirige o muestra un error.
-    if not caja or not carpeta:
-        # Puedes redirigir a una página de selección o al login
-        return redirect('login')
-
-    # Convertir a enteros (si es necesario)
-    try:
-        caja = int(caja)
-        carpeta = int(carpeta)
-    except ValueError:
-        return redirect('login')
-
-    # Consulta: obtener solo los capítulos correspondientes a la caja y carpeta actual.
-    capitulos = IndiceTemp.objects.filter(Caja=caja, Carpeta=carpeta).order_by('id2')
-
-    # Calcular la última página a partir del valor máximo de NoFolioFin
-    ultimaPagina = 0
-    for cap in capitulos:
-        if cap.NoFolioFin and cap.NoFolioFin > ultimaPagina:
-            ultimaPagina = cap.NoFolioFin
-
-    # Obtener las etiquetas (Series) si se utilizan
-    etiquetas = Serie.objects.all().order_by('nombre')
-
-    context = {
-        'caja': caja,
-        'carpeta': carpeta,
-        'capitulos': capitulos,
-        'ultimaPagina': ultimaPagina,
-        'etiquetas': etiquetas,
-    }
-    return render(request, 'indice.html', context)
-
-
-
-
 
 def agregar_carpeta_view(request):
     if request.method == "POST":

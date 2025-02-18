@@ -11,34 +11,35 @@
 </head>
 <body>
 <div class="container mt-4">
-    <h5>Caja {{ caja }} | Carpeta {{ carpeta }}</h5>
+    <h5 class="mb-0">Caja {{ caja }} | Carpeta {{ carpeta }}</h5>
     <form action="{% url 'tcarpeta' %}" method="post">
         {% csrf_token %}
         <input type="hidden" name="caja" value="{{ caja }}">
         <input type="hidden" name="carpeta" value="{{ carpeta }}">
-
+    
         <div class="form-group">
             <label for="serie">Serie:</label>
             <select id="serie" name="serie" class="form-control" required>
                 <option value="" disabled selected>Seleccione una Serie</option>
-                {% for serie in series %}
-                    <option value="{{ serie.nombre }}">{{ serie.nombre }}</option>
+                {% for serie in etiquetas %}
+                    <option value="{{ serie.id }}">{{ serie.nombre|capfirst }}</option>
                 {% endfor %}
             </select>
         </div>
-
+    
         <div class="form-group">
             <label for="subserie">Subserie:</label>
             <select id="subserie" name="subserie" class="form-control">
                 <option value="" selected>Seleccione una Subserie</option>
+                {% comment %} Las subseries se cargarán vía AJAX {% endcomment %}
             </select>
         </div>
-
+    
         <div class="form-group">
             <label for="tituloCarpeta">Título de Carpeta:</label>
             <textarea id="tituloCarpeta" name="tituloCarpeta" class="form-control" rows="3" maxlength="56"></textarea>
         </div>
-
+    
         <div class="form-row">
             <div class="form-group col-md-3">
                 <label for="fechaInicial">Fecha Inicial:</label>
@@ -49,34 +50,40 @@
                 <input type="date" id="fechaFinal" name="fechaFinal" class="form-control" required>
             </div>
         </div>
-
+    
         <input type="hidden" name="folios" value="{{ ultima_pagina }}">
-
+    
         <button type="submit" class="btn btn-success">Finalizar Carpeta</button>
     </form>
 </div>
-
+    
 <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
 <script>
 $(document).ready(function () {
     $('#serie').change(function () {
-        var serieNombre = $(this).find("option:selected").text();
-        $('#subserie').empty().append('<option value="" selected>Seleccione una Subserie</option>');
-
-        if (serieNombre) {
+        var serieId = $(this).val();
+        console.log("Serie seleccionada (ID):", serieId);
+    
+        $('#subserie').empty().append('<option value="{{ serie.id }}">{{ serie.nombre|capfirst }}</option>');
+    
+        if (serieId) {
             $.ajax({
-                url: "{% url 'obtener_subseries' %}",  // Verifica que esta URL esté registrada
+                url: "{% url 'obtener_subs' %}",
                 type: 'POST',
                 data: { 
-                    serie_id: serieNombre, 
+                    serie_id: serieId, 
                     csrfmiddlewaretoken: '{{ csrf_token }}' 
                 },
+                dataType: "json",
                 success: function (response) {
-                    response.forEach(function (subserie) {
-                        $('#subserie').append('<option value="' + subserie.id + '">' + subserie.nombre + '</option>');
-                    });
+                    if (response.subseries) {
+                        response.subseries.forEach(function (subserie) {
+                            $('#subserie').append('<option value="' + subserie.id + '">' + subserie.Subs + '</option>');
+                        });
+                    }
                 },
-                error: function () {
+                error: function (xhr) {
+                    console.log("Error al obtener subseries:", xhr.responseText);
                     alert('Error al cargar las subseries.');
                 }
             });
@@ -84,6 +91,6 @@ $(document).ready(function () {
     });
 });
 </script>
-
+    
 </body>
 </html>

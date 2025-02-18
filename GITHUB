@@ -1,5 +1,6 @@
 
 git init
+git add .
 git commit -m "Segunda Entrada"
 git branch -M master
 git remote add origin https://github.com/wrot06/doroti-Django.git

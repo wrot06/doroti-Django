@@ -12,7 +12,8 @@ from .views import (
     actualizar_orden_view, 
     eliminar_capitulo_view, 
     obtener_capitulos_view,
-    obtener_subseries,
+    obtener_Subs_view,  # ✅ Debe coincidir con el nombre en views.py
+
 )
 
 urlpatterns = [
@@ -27,7 +28,7 @@ urlpatterns = [
     path("actualizar_orden/", actualizar_orden_view, name="actualizar_orden"),
     path("eliminar_capitulo/", eliminar_capitulo_view, name="eliminar_capitulo"),
     path("obtener_capitulos/", obtener_capitulos_view, name="obtener_capitulos"),    
-    path('obtener-subseries/', obtener_subseries, name='obtener_subseries'),
+    path('obtener_subs/', obtener_Subs_view, name='obtener_subs'),
     
     
 ]

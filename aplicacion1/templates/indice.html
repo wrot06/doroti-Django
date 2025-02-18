@@ -4,8 +4,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Índice Documental</title>
-  <link rel="stylesheet" href="{% static 'css/estiloindice.css' %}">
+  <title>Índice Documental</title>  
   <link rel="stylesheet" href="{% static 'css/botongrabar.css' %}">
   <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
   <link rel="stylesheet" href="https://code.jquery.com/ui/1.12.1/themes/base/jquery-ui.css">
@@ -15,16 +14,17 @@
 <body>
 
 <div class="container mt-4">
-  <!-- Cabecera con datos de Caja y Carpeta -->
+  <!-- Cabecera con datos de Caja y Carpeta para enviar a tcarpeta.html -->
   <div class="d-flex align-items-center gap-3" style="white-space: nowrap;">
     <h5 class="mb-0">Caja {{ caja }} | Carpeta {{ carpeta }}</h5>
-    <form action="{% url 'tcarpeta' %}" method="POST" class="d-inline">
+    
+    <form action="{% url 'tcarpeta' %}" method="POST">
       {% csrf_token %}
       <input type="hidden" name="caja" value="{{ caja }}">
       <input type="hidden" name="carpeta" value="{{ carpeta }}">
-      <input type="hidden" name="folios" value="{{ ultimaPagina }}">
-      <button type="submit" class="btn btn-primary btn-sm" style="padding: .25rem .5rem;">Terminar Carpeta</button>
+      <button type="submit" class="btn btn-primary">Terminar Carpeta</button>
     </form>
+  
     <form action="{% url 'index' %}" method="POST" class="d-inline">
       {% csrf_token %}
       <button type="submit" class="btn btn-primary btn-sm" style="padding: .25rem .5rem;">Inicio</button>
@@ -255,6 +255,7 @@ $(document).ready(function() {
       });
     }
   });
+
 
   function actualizarColumnasMover() {
     $("#capitulosTable tbody tr").each(function() {
